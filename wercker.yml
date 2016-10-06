@@ -1,20 +1,22 @@
-box: wercker/python
+box: python:2.7-slim
+
 services:
-    - wercker/postgresql
 # Build definition
 build:
   # The steps that will be executed on build
   steps:
     # A step that executes `pip install` command
+    - install-packages:
+      packages: python-dev libevent-dev libpq-dev gcc postgresql
     - pip-install
-
     # A custom script step, name value is used in the UI
     # and the code value contains the command that get executed
     - script:
-        name: run unit tests
-        code: |
-          python manage.py test -v2
         name: extension test
         code: |
-          PGPASSWORD=wercker psql -h $WERCKER_POSTGRESQL_HOST -p $WERCKER_POSTGRESQL_PORT -U postgres -d werckerdb1 -c 'CREATE EXTENSION IF NOT EXISTS hstore;'
-          PGPASSWORD=wercker psql -h $WERCKER_POSTGRESQL_HOST -p $WERCKER_POSTGRESQL_PORT -U postgres -d werckerdb1 -c 'CREATE EXTENSION IF NOT EXISTS pgcrypto;'
+          PGPASSWORD=$POSTGRES_PASSWORD psql -h $WERCKER_POSTGRESQL_HOST -p $WERCKER_POSTGRESQL_PORT -U postgres -c 'CREATE DATABASE werckerdb1'
+          PGPASSWORD=$POSTGRES_PASSWORD psql -h $WERCKER_POSTGRESQL_HOST -p $WERCKER_POSTGRESQL_PORT -U postgres -d werckerdb1 -c 'CREATE EXTENSION IF NOT EXISTS hstore;'
+          PGPASSWORD=$POSTGRES_PASSWORD psql -h $WERCKER_POSTGRESQL_HOST -p $WERCKER_POSTGRESQL_PORT -U postgres -d werckerdb1 -c 'CREATE EXTENSION IF NOT EXISTS pgcrypto;'
+        name: run unit tests
+        code: |
+          python manage.py test
